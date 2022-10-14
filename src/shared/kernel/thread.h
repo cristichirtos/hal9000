@@ -119,3 +119,11 @@ THREAD_PRIORITY
 ThreadGetPriority(
     IN_OPT  PTHREAD             Thread
     );
+
+//******************************************************************************
+// Function:     GetNumberOfThreads
+// Description:  Returns the number of threads
+// Returns:      DWORD
+//******************************************************************************
+DWORD
+GetNumberOfThreads();

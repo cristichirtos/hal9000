@@ -129,6 +129,7 @@ void
 
     ASSERT(NumberOfParameters == 0);
 
+    LOG("Number of threads: %s\n", GetNumberOfThreads());
     LOG("%7s", "TID|");
     LOG("%20s", "Name|");
     LOG("%5s", "Prio|");

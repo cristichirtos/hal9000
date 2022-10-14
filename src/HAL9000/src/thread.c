@@ -36,6 +36,10 @@ typedef struct _THREAD_SYSTEM_DATA
 
     _Guarded_by_(ReadyThreadsLock)
     LIST_ENTRY          ReadyThreadsList;
+
+    _Guarded_by_(AllThreadsLock)
+    DWORD               ThreadsNumber;
+    
 } THREAD_SYSTEM_DATA, *PTHREAD_SYSTEM_DATA;
 
 static THREAD_SYSTEM_DATA m_threadSystemData;
@@ -145,6 +149,19 @@ ThreadSystemPreinit(
 
     InitializeListHead(&m_threadSystemData.ReadyThreadsList);
     LockInit(&m_threadSystemData.ReadyThreadsLock);
+
+    m_threadSystemData.ThreadsNumber = 0;
+}
+
+DWORD GetNumberOfThreads()
+{
+    INTR_STATE oldIntrState;
+    DWORD threadsNumber;
+    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldIntrState);
+    threadsNumber = m_threadSystemData.ThreadsNumber;
+    LockRelease(&m_threadSystemData.AllThreadsLock, oldIntrState);
+
+    return threadsNumber;
 }
 
 STATUS
@@ -800,6 +817,7 @@ _ThreadInit(
 
         LockAcquire(&m_threadSystemData.AllThreadsLock, &oldIntrState);
         InsertTailList(&m_threadSystemData.AllThreadsList, &pThread->AllList);
+        ++m_threadSystemData.ThreadsNumber;
         LockRelease(&m_threadSystemData.AllThreadsLock, oldIntrState);
     }
     __finally
@@ -1191,6 +1209,7 @@ _ThreadDestroy(
 
     LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
     RemoveEntryList(&pThread->AllList);
+    --m_threadSystemData.ThreadsNumber;
     LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
 
     LOGP("Thread with ID = %d and Name = %s finished\n", pThread->Id, pThread->Name);
