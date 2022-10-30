@@ -13,6 +13,8 @@
 #define TID_INCREMENT               5
 
 #define THREAD_TIME_SLICE           1
+#define ODD_THREAD_TIME_SLICE       3
+#define EVEN_THREAD_TIME_SLICE      6
 
 extern void ThreadStart();
 
@@ -445,7 +447,10 @@ ThreadTick(
     }
     pThread->TickCountCompleted++;
 
-    if (++pCpu->ThreadData.RunningThreadTicks >= THREAD_TIME_SLICE)
+    TID ThreadId = pCpu->ThreadData.CurrentThread->Id;
+    DWORD RunningThreadTicks = ++pCpu->ThreadData.RunningThreadTicks;
+    if (ThreadId % 2 && RunningThreadTicks >= ODD_THREAD_TIME_SLICE ||
+        ThreadId % 2 == 0 && RunningThreadTicks >= EVEN_THREAD_TIME_SLICE)
     {
         LOG_TRACE_THREAD("Will yield on return\n");
         pCpu->ThreadData.YieldOnInterruptReturn = TRUE;
@@ -607,6 +612,9 @@ ThreadExit(
             _InterlockedDecrement(&pParent->NumberOfActiveChildren));
         _ThreadDereference(pParent);
     }
+
+    DWORD quantaLength = pThread->Id % 2 ? ODD_THREAD_TIME_SLICE : EVEN_THREAD_TIME_SLICE;
+    LOG("Thread [ID=%d] was allocated %d time quanta of length %d", pThread->TimeQuantaAllocated, quantaLength);
 
     CpuIntrDisable();
 
@@ -856,6 +864,7 @@ _ThreadInit(
         pThread->ParentId = currentThread ? currentThread->Id : 0;
         pThread->NumberOfActiveChildren = 0;
         pThread->NumberOfChildrenCreated = 0;
+        pThread->TimeQuantaAllocated = 0;
 
         LockInit(&pThread->BlockLock);
 
@@ -1062,6 +1071,7 @@ _ThreadSchedule(
         // thread to be the next one it will be fine - there is no possibility of interrupts
         // appearing to cause inconsistencies
         pCurrentThread->UninterruptedTicks = 0;
+        ++pNextThread->TimeQuantaAllocated;
 
         SetCurrentThread(pNextThread);
         ThreadSwitch( &pCurrentThread->Stack, pNextThread->Stack);

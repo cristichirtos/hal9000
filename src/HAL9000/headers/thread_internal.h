@@ -94,8 +94,12 @@ typedef struct _THREAD
     APIC_ID                 CreatorCpuApicId;
 
     TID                     ParentId;
+
     DWORD                   NumberOfChildrenCreated;
     volatile DWORD          NumberOfActiveChildren;
+
+    DWORD                   TimeQuantaAllocated;
+
 } THREAD, *PTHREAD;
 
 //******************************************************************************
