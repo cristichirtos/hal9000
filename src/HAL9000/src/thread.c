@@ -410,6 +410,10 @@ ThreadCreateEx(
     }
     else
     {
+        PTHREAD currentThread = GetCurrentThread();
+        currentThread->NumberOfChildrenCreated++;
+        InterlockedIncrement(currentThread->NumberOfActiveChildren);
+        LOG("Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]", pThread->Id, currentThread->NumberOfChildrenCreated, currentThread->Id, pThread->CreatorCpuApicId);
         ThreadUnblock(pThread);
     }
 
@@ -544,12 +548,35 @@ ThreadExit(
     IN      STATUS              ExitStatus
     )
 {
-    PTHREAD pThread;
+    PTHREAD pThread, pParent;
     INTR_STATE oldState;
 
     LOG_FUNC_START_THREAD;
 
     pThread = GetCurrentThread();
+    pParent = _ThreadReferenceByTid(pThread->ParentId);
+
+    if (!pParent)
+    {
+        LOG("Thread [ID=%d] created on CPU [ID=%d] " \
+            "is finishing on CPU [ID=%d], while its parent " \
+            "thread is already destroyed!",
+            pThread->Id,
+            pThread->CreatorCpuApicId,
+            GetCurrentPcpu()->ApicId);
+    }
+    else
+    {
+        LOG("Thread [ID=%d] created on CPU [ID=%d] " \
+            "is finishing on CPU [ID=%d], while its parent " \
+            "thread [ID=%d] still has %d more active child threads!",
+            pThread->Id,
+            pThread->CreatorCpuApicId,
+            GetCurrentPcpu()->ApicId,
+            pParent->Id,
+            InterlockedDecrement(&pParent->NumberOfActiveChildren));
+        _ThreadDereference(pParent);
+    }
 
     CpuIntrDisable();
 
@@ -567,6 +594,35 @@ ThreadExit(
     LockAcquire(&m_threadSystemData.ReadyThreadsLock, &oldState);
     _ThreadSchedule();
     NOT_REACHED;
+}
+
+PTHREAD
+_ThreadReferenceByTid(
+    TID      Tid
+)
+{
+    INTR_STATE oldState;
+    LIST_ENTRY* pListEntry;
+    PTHREAD thread;
+
+    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
+
+    pListEntry = m_threadSystemData.AllThreadsList.Flink;
+    while (pListEntry != &m_threadSystemData.AllThreadsList)
+    {
+        thread = CONTAINING_RECORD(pListEntry, THREAD, AllList);
+        if (thread->Id == Tid)
+        {
+            _ThreadReference(thread);
+            LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+            
+            return thread;
+        }
+        pListEntry = pListEntry->Flink;
+    }
+
+    LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+    return NULL;
 }
 
 BOOLEAN
@@ -794,6 +850,11 @@ _ThreadInit(
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
         pThread->CreatorCpuApicId = GetCurrentPcpu()->ApicId;
+
+        PTHREAD currentThread = GetCurrentThread();
+        pThread->ParentId = currentThread ? currentThread->Id : 0;
+        pThread->NumberOfActiveChildren = 0;
+        pThread->NumberOfChildrenCreated = 0;
 
         LockInit(&pThread->BlockLock);
 

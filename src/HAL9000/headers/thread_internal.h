@@ -92,6 +92,10 @@ typedef struct _THREAD
     struct _PROCESS*        Process;
 
     APIC_ID                 CreatorCpuApicId;
+
+    TID                     ParentId;
+    long                    NumberOfChildrenCreated;
+    volatile long           NumberOfActiveChildren;
 } THREAD, *PTHREAD;
 
 //******************************************************************************
