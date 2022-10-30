@@ -412,8 +412,9 @@ ThreadCreateEx(
     {
         PTHREAD currentThread = GetCurrentThread();
         currentThread->NumberOfChildrenCreated++;
-        InterlockedIncrement(currentThread->NumberOfActiveChildren);
+        _InterlockedIncrement(&currentThread->NumberOfActiveChildren);
         LOG("Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]", pThread->Id, currentThread->NumberOfChildrenCreated, currentThread->Id, pThread->CreatorCpuApicId);
+
         ThreadUnblock(pThread);
     }
 
@@ -543,6 +544,35 @@ ThreadUnblock(
     LockRelease(&Thread->BlockLock, oldState);
 }
 
+PTHREAD
+_ThreadReferenceByTid(
+    TID Tid
+)
+{
+    INTR_STATE oldState;
+    LIST_ENTRY* pListEntry;
+    PTHREAD thread;
+
+    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
+
+    pListEntry = m_threadSystemData.AllThreadsList.Flink;
+    while (pListEntry != &m_threadSystemData.AllThreadsList)
+    {
+        thread = CONTAINING_RECORD(pListEntry, THREAD, AllList);
+        if (thread->Id == Tid)
+        {
+            _ThreadReference(thread);
+            LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+
+            return thread;
+        }
+        pListEntry = pListEntry->Flink;
+    }
+
+    LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+    return NULL;
+}
+
 void
 ThreadExit(
     IN      STATUS              ExitStatus
@@ -574,7 +604,7 @@ ThreadExit(
             pThread->CreatorCpuApicId,
             GetCurrentPcpu()->ApicId,
             pParent->Id,
-            InterlockedDecrement(&pParent->NumberOfActiveChildren));
+            _InterlockedDecrement(&pParent->NumberOfActiveChildren));
         _ThreadDereference(pParent);
     }
 
@@ -594,35 +624,6 @@ ThreadExit(
     LockAcquire(&m_threadSystemData.ReadyThreadsLock, &oldState);
     _ThreadSchedule();
     NOT_REACHED;
-}
-
-PTHREAD
-_ThreadReferenceByTid(
-    TID      Tid
-)
-{
-    INTR_STATE oldState;
-    LIST_ENTRY* pListEntry;
-    PTHREAD thread;
-
-    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
-
-    pListEntry = m_threadSystemData.AllThreadsList.Flink;
-    while (pListEntry != &m_threadSystemData.AllThreadsList)
-    {
-        thread = CONTAINING_RECORD(pListEntry, THREAD, AllList);
-        if (thread->Id == Tid)
-        {
-            _ThreadReference(thread);
-            LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
-            
-            return thread;
-        }
-        pListEntry = pListEntry->Flink;
-    }
-
-    LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
-    return NULL;
 }
 
 BOOLEAN
