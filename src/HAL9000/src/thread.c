@@ -412,10 +412,9 @@ ThreadCreateEx(
     }
     else
     {
-        PTHREAD currentThread = GetCurrentThread();
-        currentThread->NumberOfChildrenCreated++;
-        _InterlockedIncrement(&currentThread->NumberOfActiveChildren);
-        LOG("Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]", pThread->Id, currentThread->NumberOfChildrenCreated, currentThread->Id, pThread->CreatorCpuApicId);
+        GetCurrentThread()->NumberOfChildrenCreated++;
+        _InterlockedIncrement(&GetCurrentThread()->NumberOfActiveChildren);
+        LOG("[A1] Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]\n", pThread->Id, GetCurrentThread()->NumberOfChildrenCreated, GetCurrentThread()->Id, pThread->CreatorCpuApicId);
 
         ThreadUnblock(pThread);
     }
@@ -583,7 +582,7 @@ ThreadExit(
     IN      STATUS              ExitStatus
     )
 {
-    PTHREAD pThread, pParent;
+    PTHREAD pThread, pParent, testThread;
     INTR_STATE oldState;
 
     LOG_FUNC_START_THREAD;
@@ -591,30 +590,33 @@ ThreadExit(
     pThread = GetCurrentThread();
     pParent = _ThreadReferenceByTid(pThread->ParentId);
 
+    testThread = _ThreadReferenceByTid(0);
+
     if (!pParent)
     {
-        LOG("Thread [ID=%d] created on CPU [ID=%d] " \
+        LOG("[A1s] Thread [ID=%d] created on CPU [ID=%d] " \
             "is finishing on CPU [ID=%d], while its parent " \
-            "thread is already destroyed!",
+            "thread is already destroyed!\n",
             pThread->Id,
             pThread->CreatorCpuApicId,
             GetCurrentPcpu()->ApicId);
     }
     else
     {
-        LOG("Thread [ID=%d] created on CPU [ID=%d] " \
+        LOG("[A1s] Thread [ID=%d] created on CPU [ID=%d] " \
             "is finishing on CPU [ID=%d], while its parent " \
-            "thread [ID=%d] still has %d more active child threads!",
+            "thread [ID=%d] still has %d more active child threads!\n",
             pThread->Id,
             pThread->CreatorCpuApicId,
             GetCurrentPcpu()->ApicId,
             pParent->Id,
-            _InterlockedDecrement(&pParent->NumberOfActiveChildren));
+            //_InterlockedDecrement(
+            pParent->NumberOfActiveChildren);
         _ThreadDereference(pParent);
     }
 
-    DWORD quantaLength = pThread->Id % 2 ? ODD_THREAD_TIME_SLICE : EVEN_THREAD_TIME_SLICE;
-    LOG("Thread [ID=%d] was allocated %d time quanta of length %d", pThread->TimeQuantaAllocated, quantaLength);
+    int quantaLength = (pThread->Id % 2) ? ODD_THREAD_TIME_SLICE : EVEN_THREAD_TIME_SLICE;
+    LOG("[A1] Thread [ID=%d] was allocated %d time quanta of length %d\n", pThread->Id, pThread->TimeQuantaAllocated, quantaLength);
 
     CpuIntrDisable();
 
@@ -861,7 +863,8 @@ _ThreadInit(
         pThread->CreatorCpuApicId = GetCurrentPcpu()->ApicId;
 
         PTHREAD currentThread = GetCurrentThread();
-        pThread->ParentId = currentThread ? currentThread->Id : 0;
+        pThread->ParentId = currentThread ? currentThread->Id : -1;
+        LOG("[A1s] Thread %d created by thread %d\n", pThread->Id, pThread->ParentId);
         pThread->NumberOfActiveChildren = 0;
         pThread->NumberOfChildrenCreated = 0;
         pThread->TimeQuantaAllocated = 0;
