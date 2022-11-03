@@ -412,10 +412,6 @@ ThreadCreateEx(
     }
     else
     {
-        GetCurrentThread()->NumberOfChildrenCreated++;
-        _InterlockedIncrement(&GetCurrentThread()->NumberOfActiveChildren);
-        LOG("[A1] Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]\n", pThread->Id, GetCurrentThread()->NumberOfChildrenCreated, GetCurrentThread()->Id, pThread->CreatorCpuApicId);
-
         ThreadUnblock(pThread);
     }
 
@@ -582,7 +578,7 @@ ThreadExit(
     IN      STATUS              ExitStatus
     )
 {
-    PTHREAD pThread, pParent, testThread;
+    PTHREAD pThread, pParent;
     INTR_STATE oldState;
 
     LOG_FUNC_START_THREAD;
@@ -590,11 +586,9 @@ ThreadExit(
     pThread = GetCurrentThread();
     pParent = _ThreadReferenceByTid(pThread->ParentId);
 
-    testThread = _ThreadReferenceByTid(0);
-
     if (!pParent)
     {
-        LOG("[A1s] Thread [ID=%d] created on CPU [ID=%d] " \
+        LOG("[A1] Thread [ID=%d] created on CPU [ID=%d] " \
             "is finishing on CPU [ID=%d], while its parent " \
             "thread is already destroyed!\n",
             pThread->Id,
@@ -603,15 +597,14 @@ ThreadExit(
     }
     else
     {
-        LOG("[A1s] Thread [ID=%d] created on CPU [ID=%d] " \
+        LOG("[A1] Thread [ID=%d] created on CPU [ID=%d] " \
             "is finishing on CPU [ID=%d], while its parent " \
             "thread [ID=%d] still has %d more active child threads!\n",
             pThread->Id,
             pThread->CreatorCpuApicId,
             GetCurrentPcpu()->ApicId,
             pParent->Id,
-            //_InterlockedDecrement(
-            pParent->NumberOfActiveChildren);
+            _InterlockedDecrement(&pParent->NumberOfActiveChildren));
         _ThreadDereference(pParent);
     }
 
@@ -863,8 +856,17 @@ _ThreadInit(
         pThread->CreatorCpuApicId = GetCurrentPcpu()->ApicId;
 
         PTHREAD currentThread = GetCurrentThread();
-        pThread->ParentId = currentThread ? currentThread->Id : -1;
-        LOG("[A1s] Thread %d created by thread %d\n", pThread->Id, pThread->ParentId);
+        pThread->ParentId = currentThread ? currentThread->Id : -1 ;
+        DWORD childIndex = 1;
+
+        if (currentThread)
+        {
+            _InterlockedIncrement(&currentThread->NumberOfActiveChildren);
+            childIndex = ++currentThread->NumberOfChildrenCreated;
+        }
+
+        LOG("[A1] Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]\n", pThread->Id, childIndex, pThread->ParentId, pThread->CreatorCpuApicId);
+
         pThread->NumberOfActiveChildren = 0;
         pThread->NumberOfChildrenCreated = 0;
         pThread->TimeQuantaAllocated = 0;
