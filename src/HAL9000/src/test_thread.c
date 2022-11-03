@@ -191,7 +191,7 @@ const THREAD_TEST THREADS_TEST[] =
         _ThreadTestPassContext, (PVOID) 7, NULL, NULL,
         ThreadPriorityDefault, FALSE, TRUE, FALSE},
 
-    { "TestPyramidThraeds", TestThreadYield, NULL, NULL, NULL, NULL, FALSE, FALSE },
+    { "TestPyramidThreads", NULL, _ThreadLpTest, (PVOID) 5, NULL, NULL, FALSE, FALSE },
 };
 
 const DWORD THREADS_TOTAL_NO_OF_TESTS = ARRAYSIZE(THREADS_TEST);
