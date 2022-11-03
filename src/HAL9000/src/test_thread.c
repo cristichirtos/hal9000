@@ -3,7 +3,6 @@
 #include "test_timer.h"
 #include "test_priority_scheduler.h"
 #include "test_priority_donation.h"
-#include "test_lp.h"
 
 #include "mutex.h"
 
