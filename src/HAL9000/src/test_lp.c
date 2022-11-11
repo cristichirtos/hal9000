@@ -11,7 +11,7 @@ STATUS
 	IN_OPT		PVOID		 Context
 	)
 {
-	int numberOfChildren = (int*)Context;
+	unsigned long long numberOfChildren = (unsigned long long) Context;
 	int i; 
 
 	for (i = 0; i < numberOfChildren; i++)
@@ -20,7 +20,7 @@ STATUS
 		char thName[MAX_PATH];
 		snprintf(thName, MAX_PATH, "ThreadLp-%d", _InterlockedIncrement(&gNumberOfThreads));
 
-		STATUS status = ThreadCreate(thName, ThreadPriorityDefault, _ThreadLpTest, numberOfChildren - 1, &thread);
+		STATUS status = ThreadCreate(thName, ThreadPriorityDefault, _ThreadLpTest, (PVOID) (numberOfChildren - 1), &thread);
 
 		if (!SUCCEEDED(status))
 		{
