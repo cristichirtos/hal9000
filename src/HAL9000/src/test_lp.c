@@ -11,25 +11,32 @@ STATUS
 	IN_OPT		PVOID		 Context
 	)
 {
-	unsigned long long numberOfChildren = (unsigned long long) Context;
-	int i; 
+	int numberOfChildren = *((int*) Context);
+	int i;
+
+	PTHREAD* children = (PTHREAD*) ExAllocatePoolWithTag(PoolAllocateZeroMemory, sizeof(PTHREAD) * numberOfChildren , HEAP_THREAD_TAG, 0);
+
 
 	for (i = 0; i < numberOfChildren; i++)
 	{
-		PTHREAD thread;
 		char thName[MAX_PATH];
+		unsigned long long nextNumberOfChildren = numberOfChildren - 1;
 		snprintf(thName, MAX_PATH, "ThreadLp-%d", _InterlockedIncrement(&gNumberOfThreads));
 
-		STATUS status = ThreadCreate(thName, ThreadPriorityDefault, _ThreadLpTest, (PVOID) (numberOfChildren - 1), &thread);
+		STATUS status = ThreadCreate(thName, ThreadPriorityDefault, _ThreadLpTest, (PVOID) &nextNumberOfChildren, &children[i]);
 
 		if (!SUCCEEDED(status))
 		{
 			LOG_FUNC_ERROR("ThreadCreate", status);
 		}
-		else
-		{
-			ThreadWaitForTermination(thread, &status);
-			ThreadCloseHandle(thread);
-		}
 	}
+
+	for (i = 0; i < numberOfChildren; i++)
+	{
+		STATUS exitStatus;
+		ThreadWaitForTermination(children[i], &exitStatus);
+		ThreadCloseHandle(children[i]);
+	}
+
+	return STATUS_SUCCESS;
 }

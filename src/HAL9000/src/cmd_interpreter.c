@@ -13,6 +13,7 @@
 #include "cmd_net_helper.h"
 #include "cmd_basic.h"
 #include "boot_module.h"
+#include "test_lp.h"
 
 #pragma warning(push)
 
@@ -24,6 +25,7 @@
 #define CMD_EXIT            "exit"
 
 static FUNC_GenericCommand  _CmdPrintHelp;
+static FUNC_GenericCommand CmdLpTest;
 
 // warning C4212: nonstandard extension used: function declaration used ellipsis
 #pragma warning(push)
@@ -106,11 +108,24 @@ static const COMMAND_DEFINITION COMMANDS[] =
     { "rangefail", "Causes a range check failure to assert", CmdRangeFail, 0, 0},
     { "bitecookie", "Causes a GS cookie corruption to assert", CmdBiteCookie, 0, 0},
 
-    { "help", "Displays this help menu", _CmdPrintHelp, 0, 0}
+    { "help", "Displays this help menu", _CmdPrintHelp, 0, 0},
+
+    { "testlp", "Runs the light project test", CmdLpTest, 0, 0 }
 };
 
 #define NO_OF_COMMANDS      ARRAYSIZE(COMMANDS)
 
+void
+__cdecl
+CmdLpTest(
+    IN      QWORD       NumberOfParameters
+)
+{
+    ASSERT(NumberOfParameters == 0);
+
+    int numberOfChildrenToCreate = 5;
+    _ThreadLpTest((PVOID) &numberOfChildrenToCreate);
+}
 
 static
 BOOLEAN

@@ -189,9 +189,7 @@ const THREAD_TEST THREADS_TEST[] =
     // Same scenario as in "TestThreadPriorityDonationNest", except the number of additional threads is 7.
     {   "TestThreadPriorityDonationChain", TestThreadPriorityDonationChain,
         _ThreadTestPassContext, (PVOID) 7, NULL, NULL,
-        ThreadPriorityDefault, FALSE, TRUE, FALSE},
-
-    { "TestPyramidThreads", NULL, _ThreadLpTest, (PVOID) 5, NULL, NULL, FALSE, FALSE },
+        ThreadPriorityDefault, FALSE, TRUE, FALSE}
 };
 
 const DWORD THREADS_TOTAL_NO_OF_TESTS = ARRAYSIZE(THREADS_TEST);

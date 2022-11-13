@@ -1,3 +1,6 @@
 #pragma once
 
-FUNC_ThreadStart            _ThreadLpTest;
+STATUS
+(__cdecl _ThreadLpTest)(
+	IN_OPT		PVOID		Context
+	);
