@@ -73,6 +73,37 @@ SyscallHandler(
         case SyscallIdProcessExit:
             status = SyscallProcessExit((STATUS)*pSyscallParameters);
             break;
+        case SyscallIdThreadCreate:
+            status = SyscallThreadCreate(
+                (PFUNC_ThreadStart)pSyscallParameters[0],
+                (PVOID)pSyscallParameters[1],
+                (UM_HANDLE*)pSyscallParameters[2]
+            );
+            break;
+        case SyscallIdThreadExit:
+            status = SyscallThreadExit((STATUS)*pSyscallParameters);
+            break;
+        case SyscallIdThreadGetTid:
+            status = SyscallThreadGetTid(
+                (UM_HANDLE)pSyscallParameters[0],
+                (TID*)pSyscallParameters[1]
+            );
+            break;
+        case SyscallIdProcessGetPid:
+            status = SyscallProcessGetPid(
+                (UM_HANDLE)pSyscallParameters[0],
+                (PID*)pSyscallParameters[1]
+            );
+            break;
+        case SyscallIdThreadWaitForTermination:
+            status = SyscallThreadWaitForTermination(
+                (UM_HANDLE)pSyscallParameters[0],
+                (STATUS*)pSyscallParameters[1]
+            );
+            break;
+        case SyscallIdThreadCloseHandle:
+            status = SyscallThreadCloseHandle((UM_HANDLE)*pSyscallParameters);
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -192,6 +223,100 @@ SyscallProcessExit(
     PPROCESS Process = GetCurrentProcess();
     Process->TerminationStatus = ExitStatus;
     ProcessTerminate(Process);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadCreate(
+    IN      PFUNC_ThreadStart       StartFunction,
+    IN_OPT  PVOID                   Context,
+    OUT     UM_HANDLE*              ThreadHandle
+)
+{
+    PPROCESS process = GetCurrentProcess();
+    PTHREAD pThread;
+    char name[MAX_PATH];
+
+    snprintf(name, MAX_PATH, "thread-%u", process->NumberOfThreads);
+
+    STATUS status = ThreadCreateEx(name, ThreadPriorityDefault, StartFunction, Context, &pThread, process);
+
+    if (!SUCCEEDED(status))
+    {
+        LOG_FUNC_ERROR("ThreadCreate", status);
+
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    *ThreadHandle = (UM_HANDLE)pThread;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadExit(
+    IN  STATUS                      ExitStatus
+)
+{
+    ThreadExit(ExitStatus);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadGetTid(
+    IN_OPT  UM_HANDLE               ThreadHandle,
+    OUT     TID*                    ThreadId
+)
+{
+    if (ThreadHandle == UM_INVALID_HANDLE_VALUE)
+    {
+        *ThreadId = GetCurrentThread()->Id;
+
+        return STATUS_SUCCESS;
+    }
+
+    *ThreadId = ((PTHREAD)ThreadHandle)->Id;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallProcessGetPid(
+    IN_OPT  UM_HANDLE               ProcessHandle,
+    OUT     PID*                    ProcessId
+)
+{
+    if (ProcessHandle == UM_INVALID_HANDLE_VALUE)
+    {
+        *ProcessId = GetCurrentProcess()->Id;
+
+        return STATUS_SUCCESS;
+    }
+
+    *ProcessId = ((PPROCESS)ProcessHandle)->Id;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadWaitForTermination(
+    IN      UM_HANDLE               ThreadHandle,
+    OUT     STATUS*                 TerminationStatus
+)
+{
+    ThreadWaitForTermination((PTHREAD)ThreadHandle, TerminationStatus);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadCloseHandle(
+    IN      UM_HANDLE               ThreadHandle
+)
+{
+    ThreadCloseHandle((PTHREAD)ThreadHandle);
 
     return STATUS_SUCCESS;
 }
