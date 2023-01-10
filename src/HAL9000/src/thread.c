@@ -1036,7 +1036,7 @@ ThreadCleanupPostSchedule(
 {
     PTHREAD prevThread;
 
-    ASSERT(INTR_OFF == CpuIntrGetState());
+    ASSERT(INTR_OFF == CpuIntrGetState()); 
 
     GetCurrentPcpu()->ThreadData.RunningThreadTicks = 0;
     prevThread = GetCurrentPcpu()->ThreadData.PreviousThread;
