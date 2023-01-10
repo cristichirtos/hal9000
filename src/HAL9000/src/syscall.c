@@ -73,9 +73,6 @@ SyscallHandler(
         case SyscallIdProcessExit:
             status = SyscallProcessExit((STATUS)*pSyscallParameters);
             break;
-        case SyscallIdThreadExit:
-            status = SyscallThreadExit((STATUS)*pSyscallParameters);
-            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -195,16 +192,6 @@ SyscallProcessExit(
     PPROCESS Process = GetCurrentProcess();
     Process->TerminationStatus = ExitStatus;
     ProcessTerminate(Process);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadExit(
-    IN  STATUS                      ExitStatus
-)
-{
-    ThreadExit(ExitStatus);
 
     return STATUS_SUCCESS;
 }
