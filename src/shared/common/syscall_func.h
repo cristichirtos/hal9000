@@ -101,6 +101,18 @@ SyscallThreadGetName(
     IN      QWORD                   ThreadNameMaxLen
     );
 
+// SyscallIdGetTotalThreadNo
+//******************************************************************************
+// Function:     SyscallIdGetTotalThreadNo
+// Description:  Returns the total number of ready threads
+// Returns:      STATUS
+// Parameter:    OUT QWORD* ThreadNo
+//******************************************************************************
+STATUS
+SyscallGetTotalThreadNo(
+    OUT     QWORD*                  ThreadNo
+    );
+
 // SyscallIdProcessExit
 //******************************************************************************
 // Function:     SyscallProcessExit

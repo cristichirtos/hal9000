@@ -110,6 +110,9 @@ SyscallHandler(
                 (QWORD)pSyscallParameters[1]
             );
             break;
+        case SyscallIdGetTotalThreadNo:
+            status = SyscallGetTotalThreadNo((QWORD*)*pSyscallParameters);
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -354,6 +357,29 @@ SyscallThreadGetName(
     }
 
     snprintf(ThreadName, (DWORD)ThreadNameMaxLen + 1, threadName);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetTotalThreadNo(
+    OUT     QWORD*                  ThreadNo
+)
+{
+    QWORD readyThreadsNo = 0;
+    PPROCESS currentProcess = GetCurrentProcess();
+    INTR_STATE oldState;
+
+    LockAcquire(&currentProcess->ThreadListLock, &oldState);
+    for (PLIST_ENTRY pEntry = &currentProcess->ThreadList.Flink; pEntry != &currentProcess->ThreadList; pEntry = pEntry->Flink)
+    {
+        if (CONTAINING_RECORD(pEntry, THREAD, ProcessList)->State == ThreadStateReady)
+        {
+            ++readyThreadsNo;
+        }
+    }
+    LockRelease(&currentProcess->ThreadListLock, oldState);
+    ThreadNo = &readyThreadsNo;
 
     return STATUS_SUCCESS;
 }

@@ -77,6 +77,15 @@ SyscallThreadGetName(
     return SyscallEntry(SyscallIdThreadGetName, ThreadName, ThreadNameMaxLen);
 }
 
+// SyscallIdGetTotalThreadNo
+STATUS
+SyscallGetTotalThreadNo(
+    OUT     QWORD*                  ThreadNo
+)
+{
+    return SyscallEntry(SyscallIdGetTotalThreadNo, ThreadNo);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(
