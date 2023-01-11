@@ -104,6 +104,12 @@ SyscallHandler(
         case SyscallIdThreadCloseHandle:
             status = SyscallThreadCloseHandle((UM_HANDLE)*pSyscallParameters);
             break;
+        case SyscallIdThreadGetName:
+            status = SyscallThreadGetName(
+                (char*)pSyscallParameters[0],
+                (QWORD)pSyscallParameters[1]
+            );
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -317,6 +323,37 @@ SyscallThreadCloseHandle(
 )
 {
     ThreadCloseHandle((PTHREAD)ThreadHandle);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadGetName(
+    OUT     char*                   ThreadName,
+    IN      QWORD                   ThreadNameMaxLen
+)
+{
+    STATUS status = MmuIsBufferValid(
+        (PVOID)ThreadName,
+        ThreadNameMaxLen + 1,
+        PAGE_RIGHTS_READWRITE,
+        GetCurrentProcess()
+    );
+
+    if (!SUCCEEDED(status))
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    char* threadName = GetCurrentThread()->Name;
+    QWORD nameLength = strlen_s(threadName, MAX_PATH);
+
+    if (nameLength >= ThreadNameMaxLen)
+    {
+        return STATUS_TRUNCATED_THREAD_NAME;
+    }
+
+    snprintf(ThreadName, (DWORD)ThreadNameMaxLen + 1, threadName);
 
     return STATUS_SUCCESS;
 }

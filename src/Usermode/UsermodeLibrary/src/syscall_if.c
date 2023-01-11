@@ -67,6 +67,16 @@ SyscallThreadCloseHandle(
     return SyscallEntry(SyscallIdThreadCloseHandle, ThreadHandle);
 }
 
+// SyscallIdThreadGetName
+STATUS
+SyscallThreadGetName(
+    OUT     char*                   ThreadName,
+    IN      QWORD                   ThreadNameMaxLen
+)
+{
+    return SyscallEntry(SyscallIdThreadGetName, ThreadName, ThreadNameMaxLen);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(

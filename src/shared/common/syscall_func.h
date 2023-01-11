@@ -87,6 +87,20 @@ SyscallThreadCloseHandle(
     IN      UM_HANDLE               ThreadHandle
     );
 
+// SyscallIdThreadGetName
+//******************************************************************************
+// Function:     SyscallThreadGetName
+// Description:  Copies at the given address the calling thread's name
+// Returns:      STATUS
+// Parameter:    OUT char* ThreadName
+// Parameter:    IN QWORD ThreadNameMaxLen
+//******************************************************************************
+STATUS
+SyscallThreadGetName(
+    OUT     char* ThreadName,
+    IN      QWORD                   ThreadNameMaxLen
+    );
+
 // SyscallIdProcessExit
 //******************************************************************************
 // Function:     SyscallProcessExit
