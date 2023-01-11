@@ -86,6 +86,15 @@ SyscallGetTotalThreadNo(
     return SyscallEntry(SyscallIdGetTotalThreadNo, ThreadNo);
 }
 
+// SyscallIdGetThreadUmStackAddress
+STATUS
+SyscallGetThreadUmStackAddress(
+    OUT     PVOID*                  StackBaseAddress
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmStackAddress, StackBaseAddress);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(

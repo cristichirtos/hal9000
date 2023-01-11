@@ -113,6 +113,9 @@ SyscallHandler(
         case SyscallIdGetTotalThreadNo:
             status = SyscallGetTotalThreadNo((QWORD*)*pSyscallParameters);
             break;
+        case SyscallIdGetThreadUmStackAddress:
+            status = SyscallGetThreadUmStackAddress((PVOID*)*pSyscallParameters);
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -380,6 +383,16 @@ SyscallGetTotalThreadNo(
     }
     LockRelease(&currentProcess->ThreadListLock, oldState);
     ThreadNo = &readyThreadsNo;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetThreadUmStackAddress(
+    OUT     PVOID*                  StackBaseAddress
+)
+{
+    StackBaseAddress = GetCurrentProcess()->UmStackAddress;
 
     return STATUS_SUCCESS;
 }

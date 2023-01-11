@@ -103,7 +103,7 @@ SyscallThreadGetName(
 
 // SyscallIdGetTotalThreadNo
 //******************************************************************************
-// Function:     SyscallIdGetTotalThreadNo
+// Function:     SyscallGetTotalThreadNo
 // Description:  Returns the total number of ready threads
 // Returns:      STATUS
 // Parameter:    OUT QWORD* ThreadNo
@@ -111,6 +111,19 @@ SyscallThreadGetName(
 STATUS
 SyscallGetTotalThreadNo(
     OUT     QWORD*                  ThreadNo
+    );
+
+// SyscallIdGetThreadUmStackAddress
+//******************************************************************************
+// Function:     SyscallGetThreadUmStackAddress
+// Description:  Returns the base address of the calling process' user space
+//               stack
+// Returns:      STATUS
+// Parameter:    OUT PVOID* StackBaseAddress
+//******************************************************************************
+STATUS
+SyscallGetThreadUmStackAddress(
+    OUT     PVOID*                  StackBaseAddress
     );
 
 // SyscallIdProcessExit
