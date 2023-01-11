@@ -8,6 +8,8 @@
 #include "cpu_structures.h"
 
 #define STACK_DEFAULT_SIZE          (8*PAGE_SIZE)
+#define STACK_DEFAULT_SIZE_ODD_ID   (4*PAGE_SIZE)
+#define STACK_DEFAULT_SIZE_EVEN_ID  (16*PAGE_SIZE)
 #define STACK_GUARD_SIZE            (2*PAGE_SIZE)
 
 typedef struct _THREADING_DATA

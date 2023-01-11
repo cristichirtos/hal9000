@@ -340,14 +340,16 @@ ThreadCreateEx(
     if (!Process->PagingData->Data.KernelSpace)
     {
         // Create user-mode stack
-        pThread->UserStack = MmuAllocStack(STACK_DEFAULT_SIZE,
+        DWORD stackSize = (Process->Id % 2) ? STACK_DEFAULT_SIZE_ODD_ID : STACK_DEFAULT_SIZE_EVEN_ID;
+
+        pThread->UserStack = MmuAllocStack(stackSize,
                                            TRUE,
                                            FALSE,
                                            Process);
         if (pThread->UserStack == NULL)
         {
             status = STATUS_MEMORY_CANNOT_BE_COMMITED;
-            LOG_FUNC_ERROR_ALLOC("MmuAllocStack", STACK_DEFAULT_SIZE);
+            LOG_FUNC_ERROR_ALLOC("MmuAllocStack", stackSize);
             return status;
         }
 
