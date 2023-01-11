@@ -330,7 +330,7 @@ SyscallFileWrite(
     OUT QWORD*                      BytesWritten
 )
 {
-    if (BytesWritten == NULL)
+    if (BytesWritten == NULL || Buffer == NULL || strlen_s(Buffer, MAX_PATH) > BytesToWrite)
     {
         return STATUS_UNSUCCESSFUL;
     }
@@ -338,7 +338,7 @@ SyscallFileWrite(
     if (FileHandle == UM_FILE_HANDLE_STDOUT)
     {
         *BytesWritten = BytesToWrite;
-        LOG("[%s]:[%s]\n", ProcessGetName(NULL), Buffer);
+        LOG("[%s] Running buffer process: %s\n", ProcessGetName(NULL), Buffer);
         
         return STATUS_SUCCESS;
     }
