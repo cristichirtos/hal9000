@@ -956,7 +956,7 @@ _ThreadSetupMainThreadUserStack(
     ASSERT(Process != NULL);
 
     *ResultingStack = (PVOID)PtrDiff(InitialStack, SHADOW_STACK_SIZE + sizeof(PVOID));
-    Process->UmStackAddress = ResultingStack;
+    Process->UmStackAddress = InitialStack;
 
     return STATUS_SUCCESS;
 }

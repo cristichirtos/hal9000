@@ -388,7 +388,7 @@ SyscallGetTotalThreadNo(
         }
     }
     LockRelease(&currentProcess->ThreadListLock, oldState);
-    ThreadNo = &readyThreadsNo;
+    *ThreadNo = readyThreadsNo;
 
     return STATUS_SUCCESS;
 }
@@ -398,7 +398,7 @@ SyscallGetThreadUmStackAddress(
     OUT     PVOID*                  StackBaseAddress
 )
 {
-    StackBaseAddress = GetCurrentProcess()->UmStackAddress;
+    *StackBaseAddress = GetCurrentProcess()->UmStackAddress;
 
     return STATUS_SUCCESS;
 }
@@ -408,7 +408,7 @@ SyscallGetThreadUmStackSize(
     OUT     DWORD*                  StackSize
 )
 {
-    StackSize = &GetCurrentThread()->UserStackSize;
+    *StackSize = GetCurrentThread()->UserStackSize;
 
     return STATUS_SUCCESS;
 }
@@ -418,7 +418,7 @@ SyscallGetThreadUmEntryPoint(
     OUT     PVOID*                  EntryPoint
 )
 {
-    EntryPoint = &GetCurrentThread()->EntryPoint;
+    *EntryPoint = GetCurrentThread()->EntryPoint;
 
     return STATUS_SUCCESS;
 }
@@ -440,7 +440,7 @@ SyscallFileWrite(
     if (FileHandle == UM_FILE_HANDLE_STDOUT)
     {
         *BytesWritten = BytesToWrite;
-        LOG("[%s] Running buffer process: %s\n", ProcessGetName(NULL), Buffer);
+        LOG("[%s]: %s\n", ProcessGetName(NULL), Buffer);
         
         return STATUS_SUCCESS;
     }
