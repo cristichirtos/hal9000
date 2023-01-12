@@ -116,6 +116,9 @@ SyscallHandler(
         case SyscallIdGetThreadUmStackAddress:
             status = SyscallGetThreadUmStackAddress((PVOID*)*pSyscallParameters);
             break;
+        case SyscallIdGetThreadUmStackSize:
+            status = SyscallGetThreadUmStackSize((DWORD*)*pSyscallParameters);
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -393,6 +396,16 @@ SyscallGetThreadUmStackAddress(
 )
 {
     StackBaseAddress = GetCurrentProcess()->UmStackAddress;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetThreadUmStackSize(
+    OUT     DWORD*                  StackSize
+)
+{
+    StackSize = &GetCurrentThread()->UserStackSize;
 
     return STATUS_SUCCESS;
 }

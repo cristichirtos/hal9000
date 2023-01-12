@@ -15,6 +15,7 @@ typedef enum _SYSCALL_ID
     SyscallIdThreadGetName,
     SyscallIdGetTotalThreadNo,
     SyscallIdGetThreadUmStackAddress,
+    SyscallIdGetThreadUmStackSize,
 
     // Process Management
     SyscallIdProcessExit,

@@ -126,6 +126,18 @@ SyscallGetThreadUmStackAddress(
     OUT     PVOID*                  StackBaseAddress
     );
 
+// SyscallIdGetThreadUmStackSize
+//******************************************************************************
+// Function:     SyscallGetThreadUmStackSize
+// Description:  Returns the size of the calling thread's user space stack
+// Returns:      STATUS
+// Parameter:    OUT DWORD* StackSize
+//******************************************************************************
+STATUS
+SyscallGetThreadUmStackSize(
+    OUT     DWORD*                  StackSize
+    );
+
 // SyscallIdProcessExit
 //******************************************************************************
 // Function:     SyscallProcessExit

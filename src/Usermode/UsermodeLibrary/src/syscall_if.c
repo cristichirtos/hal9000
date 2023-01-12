@@ -95,6 +95,15 @@ SyscallGetThreadUmStackAddress(
     return SyscallEntry(SyscallIdGetThreadUmStackAddress, StackBaseAddress);
 }
 
+// SyscallIdGetThreadUmStackSize
+STATUS
+SyscallGetThreadUmStackSize(
+    OUT     DWORD*                  StackSize
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmStackSize, StackSize);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(
