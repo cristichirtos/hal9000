@@ -119,6 +119,9 @@ SyscallHandler(
         case SyscallIdGetThreadUmStackSize:
             status = SyscallGetThreadUmStackSize((DWORD*)*pSyscallParameters);
             break;
+        case SyscallIdGetThreadUmEntryPoint:
+            status = SyscallGetThreadUmEntryPoint((PVOID*)*pSyscallParameters);
+            break;
         case SyscallIdFileWrite:
             status = SyscallFileWrite(
                 (UM_HANDLE)pSyscallParameters[0],
@@ -406,6 +409,16 @@ SyscallGetThreadUmStackSize(
 )
 {
     StackSize = &GetCurrentThread()->UserStackSize;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetThreadUmEntryPoint(
+    OUT     PVOID*                  EntryPoint
+)
+{
+    EntryPoint = &GetCurrentThread()->EntryPoint;
 
     return STATUS_SUCCESS;
 }

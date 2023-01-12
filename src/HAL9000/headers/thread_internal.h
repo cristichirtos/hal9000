@@ -91,6 +91,8 @@ typedef struct _THREAD
 
     DWORD                   UserStackSize;
 
+    PVOID                   EntryPoint;
+
     struct _PROCESS*        Process;
 } THREAD, *PTHREAD;
 

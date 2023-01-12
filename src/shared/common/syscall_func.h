@@ -138,6 +138,18 @@ SyscallGetThreadUmStackSize(
     OUT     DWORD*                  StackSize
     );
 
+// SyscallIdGetThreadUmEntryPoint
+//******************************************************************************
+// Function:     SyscallGetThreadUmEntryPoint
+// Description:  Returns the entry point of the calling thread's user space
+// Returns:      STATUS
+// Parameter:    OUT PVOID* EntryPoint
+//******************************************************************************
+STATUS
+SyscallGetThreadUmEntryPoint(
+    OUT     PVOID*                  EntryPoint
+    );
+
 // SyscallIdProcessExit
 //******************************************************************************
 // Function:     SyscallProcessExit

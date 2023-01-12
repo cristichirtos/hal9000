@@ -104,6 +104,15 @@ SyscallGetThreadUmStackSize(
     return SyscallEntry(SyscallIdGetThreadUmStackSize, StackSize);
 }
 
+// SyscallIdGetThreadUmEntryPoint
+STATUS
+SyscallGetThreadUmEntryPoint(
+    OUT     PVOID*                  EntryPoint
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmEntryPoint, EntryPoint);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(
