@@ -380,7 +380,7 @@ SyscallGetTotalThreadNo(
     INTR_STATE oldState;
 
     LockAcquire(&currentProcess->ThreadListLock, &oldState);
-    for (PLIST_ENTRY pEntry = &currentProcess->ThreadList.Flink; pEntry != &currentProcess->ThreadList; pEntry = pEntry->Flink)
+    for (PLIST_ENTRY pEntry = currentProcess->ThreadList.Flink; pEntry != &currentProcess->ThreadList; pEntry = pEntry->Flink)
     {
         if (CONTAINING_RECORD(pEntry, THREAD, ProcessList)->State == ThreadStateReady)
         {
