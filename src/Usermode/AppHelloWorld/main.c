@@ -12,12 +12,28 @@ __main(
 {
     STATUS status;
     TID tid;
-   // UM_HANDLE umHandle;
+    PID pid;
+    UM_HANDLE umHandle;
 
-    LOG("Hello from the Light Project application!\n");
+    LOG("Hello from your colloquium application!\n");
 
     LOG("Number of arguments 0x%x\n", argc);
     LOG("Arguments at 0x%X\n", argv);
+    //for (DWORD i = 0; i < argc; ++i)
+    //{
+     //   LOG("Argument[%u] is at 0x%X\n", i, argv[i]);
+      //  LOG("Argument[%u] is %s\n", i, argv[i]);
+    //}
+
+    status = SyscallProcessGetPid(UM_INVALID_HANDLE_VALUE, &pid);
+    if (!SUCCEEDED(status))
+    {
+        LOG_FUNC_ERROR("SyscallProcessGetPid", status);
+        return status;
+    }
+
+    LOG("Hello from process with ID 0x%X\n", pid);
+
 
     status = SyscallThreadGetTid(UM_INVALID_HANDLE_VALUE, &tid);
     if (!SUCCEEDED(status))
@@ -26,70 +42,16 @@ __main(
         return status;
     }
 
-    char name[MAX_PATH];
-    char copiedName[50];
-    status = SyscallThreadGetName(name, MAX_PATH);
+    LOG("Hello from thread with ID 0x%X\n", tid);
+
+    status = UmThreadCreate(_HelloWorldFromThread, (PVOID)(QWORD) argc, &umHandle);
     if (!SUCCEEDED(status))
     {
-        LOG_FUNC_ERROR("SyscallThreadGetName", status);
+        LOG_FUNC_ERROR("SyscallThreadCreate", status);
         return status;
     }
 
-    QWORD threadNameLength = strlen_s(name, MAX_PATH);
-    for (QWORD ThreadNameMaxLen = 0; ThreadNameMaxLen <= threadNameLength + 1; ++ThreadNameMaxLen)
-    {
-        status = SyscallThreadGetName(copiedName, ThreadNameMaxLen);
-        if (!SUCCEEDED(status))
-        {
-            LOG(
-                "[ID=%d][Name=%s] Thread name copying unsuccessful - name length is %d, while ThreadNameMaxLen is %d",
-                tid,
-                name,
-                threadNameLength,
-                ThreadNameMaxLen
-            );
-        }
-        else
-        {
-            LOG("[ID=%d][Name=%s] Copied name: %s", tid, name, copiedName);
-        }
-    }
-
-    QWORD threadsNo;
-    status = SyscallGetTotalThreadNo(&threadsNo);
-    if (!SUCCEEDED(status))
-    {
-        LOG_FUNC_ERROR("SyscallGetTotalThreadNo", status);
-        return status;
-    }
-    LOG("Current number of ready threads: %d", threadsNo);
-
-    PVOID stackBaseAddress;
-    status = SyscallGetThreadUmStackAddress(&stackBaseAddress);
-    if (!SUCCEEDED(status))
-    {
-        LOG_FUNC_ERROR("SyscallGetThreadUmStackAddress", status);
-        return status;
-    }
-    LOG("Main thread base address is located at 0x%X", stackBaseAddress);
-
-    DWORD stackSize;
-    status = SyscallGetThreadUmStackSize(&stackSize);
-    if (!SUCCEEDED(status))
-    {
-        LOG_FUNC_ERROR("SyscallGetThreadUmStackSize", status);
-        return status;
-    }
-    LOG("Main thread stack size: %d", stackSize);
-
-    PVOID entryPoint;
-    status = SyscallGetThreadUmEntryPoint(&entryPoint);
-    if (!SUCCEEDED(status))
-    {
-        LOG_FUNC_ERROR("SyscallGetThreadUmEntryPoint", status);
-        return status;
-    }
-    LOG("Process entry point: 0x%X", entryPoint);
+    //SyscallThreadCloseHandle()
 
     return STATUS_SUCCESS;
 }

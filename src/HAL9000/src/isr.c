@@ -148,8 +148,8 @@ _IsrExceptionHandler(
         if (!GdtIsSegmentPrivileged((WORD)StackPointer->Registers.CS))
         {
             PPROCESS currProcess = GetCurrentProcess();
-            LOG_TRACE_EXCEPTION("Terminating process %s\n", ProcessGetName(currProcess));
             ProcessTerminate(currProcess);
+            exceptionHandled = TRUE;
         }
     }
 

@@ -340,16 +340,14 @@ ThreadCreateEx(
     if (!Process->PagingData->Data.KernelSpace)
     {
         // Create user-mode stack
-        DWORD stackSize = (Process->Id % 2) ? STACK_DEFAULT_SIZE_ODD_ID : STACK_DEFAULT_SIZE_EVEN_ID;
-
-        pThread->UserStack = MmuAllocStack(stackSize,
+        pThread->UserStack = MmuAllocStack(STACK_DEFAULT_SIZE,
                                            TRUE,
                                            FALSE,
                                            Process);
         if (pThread->UserStack == NULL)
         {
             status = STATUS_MEMORY_CANNOT_BE_COMMITED;
-            LOG_FUNC_ERROR_ALLOC("MmuAllocStack", stackSize);
+            LOG_FUNC_ERROR_ALLOC("MmuAllocStack", STACK_DEFAULT_SIZE);
             return status;
         }
 
@@ -379,9 +377,6 @@ ThreadCreateEx(
         pStartFunction = (PVOID) (bProcessIniialThread ? Process->HeaderInfo->Preferred.AddressOfEntryPoint : Function);
         firstArg       = (QWORD) (bProcessIniialThread ? Process->NumberOfArguments : (QWORD) Context);
         secondArg      = (QWORD) (bProcessIniialThread ? PtrOffset(pThread->UserStack, SHADOW_STACK_SIZE + sizeof(PVOID)) : 0);
-
-        pThread->UserStackSize = stackSize;
-        pThread->EntryPoint = pStartFunction;
     }
     else
     {
@@ -956,7 +951,6 @@ _ThreadSetupMainThreadUserStack(
     ASSERT(Process != NULL);
 
     *ResultingStack = (PVOID)PtrDiff(InitialStack, SHADOW_STACK_SIZE + sizeof(PVOID));
-    Process->UmStackAddress = InitialStack;
 
     return STATUS_SUCCESS;
 }
@@ -1042,7 +1036,7 @@ ThreadCleanupPostSchedule(
 {
     PTHREAD prevThread;
 
-    ASSERT(INTR_OFF == CpuIntrGetState()); 
+    ASSERT(INTR_OFF == CpuIntrGetState());
 
     GetCurrentPcpu()->ThreadData.RunningThreadTicks = 0;
     prevThread = GetCurrentPcpu()->ThreadData.PreviousThread;

@@ -7,8 +7,8 @@
 #include "mmu.h"
 #include "process_internal.h"
 #include "dmp_cpu.h"
-#include "thread_internal.h"
 #include "thread.h"
+#include "thread_internal.h"
 
 extern void SyscallEntry();
 
@@ -69,67 +69,19 @@ SyscallHandler(
         case SyscallIdIdentifyVersion:
             status = SyscallValidateInterface((SYSCALL_IF_VERSION)*pSyscallParameters);
             break;
-        // STUDENT TODO: implement the rest of the syscalls
-        case SyscallIdProcessExit:
-            status = SyscallProcessExit((STATUS)*pSyscallParameters);
+        case SyscallIdFileWrite:
+            status = SyscallFileWrite((UM_HANDLE)pSyscallParameters[0],
+                                      (PVOID)pSyscallParameters[1],
+                                      (QWORD)pSyscallParameters[2],
+                                      (QWORD*)pSyscallParameters[3]);
             break;
-        case SyscallIdThreadCreate:
-            status = SyscallThreadCreate(
-                (PFUNC_ThreadStart)pSyscallParameters[0],
-                (PVOID)pSyscallParameters[1],
-                (UM_HANDLE*)pSyscallParameters[2]
-            );
+        case SyscallIdProcessExit:
+            status = SyscallProcessExit((STATUS)pSyscallParameters[0]);
             break;
         case SyscallIdThreadExit:
-            status = SyscallThreadExit((STATUS)*pSyscallParameters);
+            status = SyscallThreadExit((STATUS)pSyscallParameters[0]);
             break;
-        case SyscallIdThreadGetTid:
-            status = SyscallThreadGetTid(
-                (UM_HANDLE)pSyscallParameters[0],
-                (TID*)pSyscallParameters[1]
-            );
-            break;
-        case SyscallIdProcessGetPid:
-            status = SyscallProcessGetPid(
-                (UM_HANDLE)pSyscallParameters[0],
-                (PID*)pSyscallParameters[1]
-            );
-            break;
-        case SyscallIdThreadWaitForTermination:
-            status = SyscallThreadWaitForTermination(
-                (UM_HANDLE)pSyscallParameters[0],
-                (STATUS*)pSyscallParameters[1]
-            );
-            break;
-        case SyscallIdThreadCloseHandle:
-            status = SyscallThreadCloseHandle((UM_HANDLE)*pSyscallParameters);
-            break;
-        case SyscallIdThreadGetName:
-            status = SyscallThreadGetName(
-                (char*)pSyscallParameters[0],
-                (QWORD)pSyscallParameters[1]
-            );
-            break;
-        case SyscallIdGetTotalThreadNo:
-            status = SyscallGetTotalThreadNo((QWORD*)*pSyscallParameters);
-            break;
-        case SyscallIdGetThreadUmStackAddress:
-            status = SyscallGetThreadUmStackAddress((PVOID*)*pSyscallParameters);
-            break;
-        case SyscallIdGetThreadUmStackSize:
-            status = SyscallGetThreadUmStackSize((DWORD*)*pSyscallParameters);
-            break;
-        case SyscallIdGetThreadUmEntryPoint:
-            status = SyscallGetThreadUmEntryPoint((PVOID*)*pSyscallParameters);
-            break;
-        case SyscallIdFileWrite:
-            status = SyscallFileWrite(
-                (UM_HANDLE)pSyscallParameters[0],
-                (PVOID)pSyscallParameters[1],
-                (QWORD)pSyscallParameters[2],
-                (QWORD*)pSyscallParameters[3]
-            );
-            break;
+        // STUDENT TODO: implement the rest of the syscalls
         default:
             LOG_ERROR("Unimplemented syscall called from User-space!\n");
             status = STATUS_UNSUPPORTED;
@@ -231,220 +183,42 @@ SyscallValidateInterface(
     return STATUS_SUCCESS;
 }
 
-// STUDENT TODO: implement the rest of the syscalls
-
-STATUS
-SyscallProcessExit(
-    IN  STATUS                      ExitStatus
-)
-{
-    PPROCESS Process = GetCurrentProcess();
-    Process->TerminationStatus = ExitStatus;
-    ProcessTerminate(Process);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadCreate(
-    IN      PFUNC_ThreadStart       StartFunction,
-    IN_OPT  PVOID                   Context,
-    OUT     UM_HANDLE*              ThreadHandle
-)
-{
-    PPROCESS process = GetCurrentProcess();
-    PTHREAD pThread;
-    char name[MAX_PATH];
-
-    snprintf(name, MAX_PATH, "thread-%u", process->NumberOfThreads);
-
-    STATUS status = ThreadCreateEx(name, ThreadPriorityDefault, StartFunction, Context, &pThread, process);
-
-    if (!SUCCEEDED(status))
-    {
-        LOG_FUNC_ERROR("ThreadCreate", status);
-
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    *ThreadHandle = (UM_HANDLE)pThread;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadExit(
-    IN  STATUS                      ExitStatus
-)
-{
-    ThreadExit(ExitStatus);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadGetTid(
-    IN_OPT  UM_HANDLE               ThreadHandle,
-    OUT     TID*                    ThreadId
-)
-{
-    if (ThreadHandle == UM_INVALID_HANDLE_VALUE)
-    {
-        *ThreadId = GetCurrentThread()->Id;
-
-        return STATUS_SUCCESS;
-    }
-
-    *ThreadId = ((PTHREAD)ThreadHandle)->Id;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallProcessGetPid(
-    IN_OPT  UM_HANDLE               ProcessHandle,
-    OUT     PID*                    ProcessId
-)
-{
-    if (ProcessHandle == UM_INVALID_HANDLE_VALUE)
-    {
-        *ProcessId = GetCurrentProcess()->Id;
-
-        return STATUS_SUCCESS;
-    }
-
-    *ProcessId = ((PPROCESS)ProcessHandle)->Id;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadWaitForTermination(
-    IN      UM_HANDLE               ThreadHandle,
-    OUT     STATUS*                 TerminationStatus
-)
-{
-    ThreadWaitForTermination((PTHREAD)ThreadHandle, TerminationStatus);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadCloseHandle(
-    IN      UM_HANDLE               ThreadHandle
-)
-{
-    ThreadCloseHandle((PTHREAD)ThreadHandle);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallThreadGetName(
-    OUT     char*                   ThreadName,
-    IN      QWORD                   ThreadNameMaxLen
-)
-{
-    STATUS status = MmuIsBufferValid(
-        (PVOID)ThreadName,
-        ThreadNameMaxLen + 1,
-        PAGE_RIGHTS_READWRITE,
-        GetCurrentProcess()
-    );
-
-    if (!SUCCEEDED(status))
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    char* threadName = GetCurrentThread()->Name;
-    QWORD nameLength = strlen_s(threadName, MAX_PATH);
-
-    if (nameLength >= ThreadNameMaxLen)
-    {
-        return STATUS_TRUNCATED_THREAD_NAME;
-    }
-
-    snprintf(ThreadName, (DWORD)ThreadNameMaxLen + 1, threadName);
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallGetTotalThreadNo(
-    OUT     QWORD*                  ThreadNo
-)
-{
-    QWORD readyThreadsNo = 0;
-    PPROCESS currentProcess = GetCurrentProcess();
-    INTR_STATE oldState;
-
-    LockAcquire(&currentProcess->ThreadListLock, &oldState);
-    for (PLIST_ENTRY pEntry = currentProcess->ThreadList.Flink; pEntry != &currentProcess->ThreadList; pEntry = pEntry->Flink)
-    {
-        if (CONTAINING_RECORD(pEntry, THREAD, ProcessList)->State == ThreadStateReady)
-        {
-            ++readyThreadsNo;
-        }
-    }
-    LockRelease(&currentProcess->ThreadListLock, oldState);
-    *ThreadNo = readyThreadsNo;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallGetThreadUmStackAddress(
-    OUT     PVOID*                  StackBaseAddress
-)
-{
-    *StackBaseAddress = GetCurrentProcess()->UmStackAddress;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallGetThreadUmStackSize(
-    OUT     DWORD*                  StackSize
-)
-{
-    *StackSize = GetCurrentThread()->UserStackSize;
-
-    return STATUS_SUCCESS;
-}
-
-STATUS
-SyscallGetThreadUmEntryPoint(
-    OUT     PVOID*                  EntryPoint
-)
-{
-    *EntryPoint = GetCurrentThread()->EntryPoint;
-
-    return STATUS_SUCCESS;
-}
-
 STATUS
 SyscallFileWrite(
     IN  UM_HANDLE                   FileHandle,
     IN_READS_BYTES(BytesToWrite)
     PVOID                           Buffer,
     IN  QWORD                       BytesToWrite,
-    OUT QWORD*                      BytesWritten
+    OUT QWORD* BytesWritten
 )
 {
-    if (BytesWritten == NULL || Buffer == NULL || strlen_s(Buffer, MAX_PATH) > BytesToWrite)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    if (FileHandle == UM_FILE_HANDLE_STDOUT)
-    {
+    if (FileHandle == UM_FILE_HANDLE_STDOUT) {
+        LOG("%s\n", Buffer);
         *BytesWritten = BytesToWrite;
-        LOG("[%s]: %s\n", ProcessGetName(NULL), Buffer);
-        
-        return STATUS_SUCCESS;
     }
 
-    *BytesWritten = BytesToWrite;
     return STATUS_SUCCESS;
 }
+
+STATUS
+SyscallProcessExit(
+    IN      STATUS                  ExitStatus
+)
+{
+    UNREFERENCED_PARAMETER(ExitStatus);
+
+    ProcessTerminate(NULL);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadExit(
+    IN      STATUS                  ExitStatus
+)
+{
+    ThreadExit(ExitStatus);
+
+    return STATUS_SUCCESS;
+}
+// STUDENT TODO: implement the rest of the syscalls
