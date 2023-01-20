@@ -87,6 +87,69 @@ SyscallThreadCloseHandle(
     IN      UM_HANDLE               ThreadHandle
     );
 
+// SyscallIdThreadGetName
+//******************************************************************************
+// Function:     SyscallThreadGetName
+// Description:  Copies at the given address the calling thread's name
+// Returns:      STATUS
+// Parameter:    OUT char* ThreadName
+// Parameter:    IN QWORD ThreadNameMaxLen
+//******************************************************************************
+STATUS
+SyscallThreadGetName(
+    OUT     char* ThreadName,
+    IN      QWORD                   ThreadNameMaxLen
+    );
+
+// SyscallIdGetTotalThreadNo
+//******************************************************************************
+// Function:     SyscallGetTotalThreadNo
+// Description:  Returns the total number of ready threads
+// Returns:      STATUS
+// Parameter:    OUT QWORD* ThreadNo
+//******************************************************************************
+STATUS
+SyscallGetTotalThreadNo(
+    OUT     QWORD*                  ThreadNo
+    );
+
+// SyscallIdGetThreadUmStackAddress
+//******************************************************************************
+// Function:     SyscallGetThreadUmStackAddress
+// Description:  Returns the base address of the calling process' user space
+//               stack
+// Returns:      STATUS
+// Parameter:    OUT PVOID* StackBaseAddress
+//******************************************************************************
+STATUS
+SyscallGetThreadUmStackAddress(
+    OUT     PVOID*                  StackBaseAddress
+    );
+
+// SyscallIdGetThreadUmStackSize
+//******************************************************************************
+// Function:     SyscallGetThreadUmStackSize
+// Description:  Returns the size of the calling thread's user space stack
+// Returns:      STATUS
+// Parameter:    OUT DWORD* StackSize
+//******************************************************************************
+STATUS
+SyscallGetThreadUmStackSize(
+    OUT     DWORD*                  StackSize
+    );
+
+// SyscallIdGetThreadUmEntryPoint
+//******************************************************************************
+// Function:     SyscallGetThreadUmEntryPoint
+// Description:  Returns the entry point of the calling thread's user space
+// Returns:      STATUS
+// Parameter:    OUT PVOID* EntryPoint
+//******************************************************************************
+STATUS
+SyscallGetThreadUmEntryPoint(
+    OUT     PVOID*                  EntryPoint
+    );
+
 // SyscallIdProcessExit
 //******************************************************************************
 // Function:     SyscallProcessExit

@@ -89,6 +89,10 @@ typedef struct _THREAD
     // MUST be non-NULL for all threads which belong to user-mode processes
     PVOID                   UserStack;
 
+    DWORD                   UserStackSize;
+
+    PVOID                   EntryPoint;
+
     struct _PROCESS*        Process;
 } THREAD, *PTHREAD;
 

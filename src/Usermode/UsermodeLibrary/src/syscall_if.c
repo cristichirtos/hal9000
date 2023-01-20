@@ -67,6 +67,52 @@ SyscallThreadCloseHandle(
     return SyscallEntry(SyscallIdThreadCloseHandle, ThreadHandle);
 }
 
+// SyscallIdThreadGetName
+STATUS
+SyscallThreadGetName(
+    OUT     char*                   ThreadName,
+    IN      QWORD                   ThreadNameMaxLen
+)
+{
+    return SyscallEntry(SyscallIdThreadGetName, ThreadName, ThreadNameMaxLen);
+}
+
+// SyscallIdGetTotalThreadNo
+STATUS
+SyscallGetTotalThreadNo(
+    OUT     QWORD*                  ThreadNo
+)
+{
+    return SyscallEntry(SyscallIdGetTotalThreadNo, ThreadNo);
+}
+
+// SyscallIdGetThreadUmStackAddress
+STATUS
+SyscallGetThreadUmStackAddress(
+    OUT     PVOID*                  StackBaseAddress
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmStackAddress, StackBaseAddress);
+}
+
+// SyscallIdGetThreadUmStackSize
+STATUS
+SyscallGetThreadUmStackSize(
+    OUT     DWORD*                  StackSize
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmStackSize, StackSize);
+}
+
+// SyscallIdGetThreadUmEntryPoint
+STATUS
+SyscallGetThreadUmEntryPoint(
+    OUT     PVOID*                  EntryPoint
+)
+{
+    return SyscallEntry(SyscallIdGetThreadUmEntryPoint, EntryPoint);
+}
+
 // SyscallIdProcessExit
 STATUS
 SyscallProcessExit(
