@@ -245,6 +245,7 @@
     <ClCompile Include="src\serial_comm.c" />
     <ClCompile Include="src\smp.c" />
     <ClCompile Include="src\syscall.c" />
+    <ClCompile Include="src\test_lp.c" />
     <ClCompile Include="src\test_priority_donation.c" />
     <ClCompile Include="src\test_priority_scheduler.c" />
     <ClCompile Include="src\test_process.c" />
@@ -354,6 +355,7 @@
     <ClInclude Include="headers\test_common.h" />
     <ClInclude Include="headers\test_dma.h" />
     <ClInclude Include="headers\test_file_io.h" />
+    <ClInclude Include="headers\test_lp.h" />
     <ClInclude Include="headers\test_net_stack.h" />
     <ClInclude Include="headers\test_pmm.h" />
     <ClInclude Include="headers\test_priority_donation.h" />

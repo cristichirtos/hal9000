@@ -10,9 +10,11 @@
 #include "gdtmu.h"
 #include "pe_exports.h"
 
-#define TID_INCREMENT               4
+#define TID_INCREMENT               5
 
 #define THREAD_TIME_SLICE           1
+#define ODD_THREAD_TIME_SLICE       3
+#define EVEN_THREAD_TIME_SLICE      6
 
 extern void ThreadStart();
 
@@ -440,7 +442,10 @@ ThreadTick(
     }
     pThread->TickCountCompleted++;
 
-    if (++pCpu->ThreadData.RunningThreadTicks >= THREAD_TIME_SLICE)
+    TID ThreadId = pCpu->ThreadData.CurrentThread->Id;
+    DWORD RunningThreadTicks = ++pCpu->ThreadData.RunningThreadTicks;
+    if (ThreadId % 2 && RunningThreadTicks >= ODD_THREAD_TIME_SLICE ||
+        ThreadId % 2 == 0 && RunningThreadTicks >= EVEN_THREAD_TIME_SLICE)
     {
         LOG_TRACE_THREAD("Will yield on return\n");
         pCpu->ThreadData.YieldOnInterruptReturn = TRUE;
@@ -539,17 +544,72 @@ ThreadUnblock(
     LockRelease(&Thread->BlockLock, oldState);
 }
 
+PTHREAD
+_ThreadReferenceByTid(
+    TID Tid
+)
+{
+    INTR_STATE oldState;
+    LIST_ENTRY* pListEntry;
+    PTHREAD thread;
+
+    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
+
+    pListEntry = m_threadSystemData.AllThreadsList.Flink;
+    while (pListEntry != &m_threadSystemData.AllThreadsList)
+    {
+        thread = CONTAINING_RECORD(pListEntry, THREAD, AllList);
+        if (thread->Id == Tid)
+        {
+            _ThreadReference(thread);
+            LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+
+            return thread;
+        }
+        pListEntry = pListEntry->Flink;
+    }
+
+    LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+    return NULL;
+}
+
 void
 ThreadExit(
     IN      STATUS              ExitStatus
     )
 {
-    PTHREAD pThread;
+    PTHREAD pThread, pParent;
     INTR_STATE oldState;
 
     LOG_FUNC_START_THREAD;
 
     pThread = GetCurrentThread();
+    pParent = _ThreadReferenceByTid(pThread->ParentId);
+
+    if (!pParent)
+    {
+        LOG("[A1] Thread [ID=%d] created on CPU [ID=%d] " \
+            "is finishing on CPU [ID=%d], while its parent " \
+            "thread is already destroyed!\n",
+            pThread->Id,
+            pThread->CreatorCpuApicId,
+            GetCurrentPcpu()->ApicId);
+    }
+    else
+    {
+        LOG("[A1] Thread [ID=%d] created on CPU [ID=%d] " \
+            "is finishing on CPU [ID=%d], while its parent " \
+            "thread [ID=%d] still has %d more active child threads!\n",
+            pThread->Id,
+            pThread->CreatorCpuApicId,
+            GetCurrentPcpu()->ApicId,
+            pParent->Id,
+            _InterlockedDecrement(&pParent->NumberOfActiveChildren));
+        _ThreadDereference(pParent);
+    }
+
+    int quantaLength = (pThread->Id % 2) ? ODD_THREAD_TIME_SLICE : EVEN_THREAD_TIME_SLICE;
+    LOG("[A1] Thread [ID=%d] was allocated %d time quanta of length %d\n", pThread->Id, pThread->TimeQuantaAllocated, quantaLength);
 
     CpuIntrDisable();
 
@@ -793,6 +853,23 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
+        pThread->CreatorCpuApicId = GetCurrentPcpu()->ApicId;
+
+        PTHREAD currentThread = GetCurrentThread();
+        pThread->ParentId = currentThread ? currentThread->Id : -1 ;
+        DWORD childIndex = 1;
+
+        if (currentThread)
+        {
+            _InterlockedIncrement(&currentThread->NumberOfActiveChildren);
+            childIndex = ++currentThread->NumberOfChildrenCreated;
+        }
+
+        LOG("[A1] Thread [ID=%d] is the %d-th thread created by thread [ID=%d] on CPU [%d]\n", pThread->Id, childIndex, pThread->ParentId, pThread->CreatorCpuApicId);
+
+        pThread->NumberOfActiveChildren = 0;
+        pThread->NumberOfChildrenCreated = 0;
+        pThread->TimeQuantaAllocated = 0;
 
         LockInit(&pThread->BlockLock);
 
@@ -999,6 +1076,7 @@ _ThreadSchedule(
         // thread to be the next one it will be fine - there is no possibility of interrupts
         // appearing to cause inconsistencies
         pCurrentThread->UninterruptedTicks = 0;
+        ++pNextThread->TimeQuantaAllocated;
 
         SetCurrentThread(pNextThread);
         ThreadSwitch( &pCurrentThread->Stack, pNextThread->Stack);
